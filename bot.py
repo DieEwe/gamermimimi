@@ -442,7 +442,6 @@ async def gamer_help(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed, ephemeral=True)
 # ─── Register & Sync ───────────────────────────────────────────────────────────
 
-bot.tree.add_command(gamer_group)
 
 @bot.event
 async def on_ready():
@@ -452,14 +451,11 @@ async def on_ready():
         return
     assert isinstance(user, (discord.User, discord.ClientUser))
     print(f"Logged in as {user} (ID: {user.id})")
-    # global registration (will take up to 60 m to show everywhere)
-    synced = await bot.tree.sync()
-    print(f"[global] Synced {len(synced)} commands")
-    # Optionally: instantly push commands to all existing guilds
+    # Instant‐inject into every existing guild on startup
     for g in bot.guilds:
         bot.tree.add_command(gamer_group, guild=discord.Object(id=g.id))
-        await bot.tree.sync(guild=g)
-        print(f"→ Pushed to {g.name} ({g.id})")
+        synced = await bot.tree.sync(guild=g)
+        print(f"[startup] Synced {len(synced)} commands in {g.name} ({g.id})")
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
