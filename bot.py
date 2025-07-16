@@ -464,6 +464,12 @@ async def on_ready():
         synced = await bot.tree.sync()
         print(f"[prod] Synced {len(synced)} commands")
 
+@bot.event
+async def on_guild_join(guild: discord.Guild):
+    # Instantly register/sync slash-commands in the guild we just joined
+    synced = await bot.tree.sync(guild=guild)
+    print(f"✅ Registered {len(synced)} slash-commands in guild {guild.name} ({guild.id})")
+
 
 # ─── Global error handler for app_commands ───────────────────────────────────
 from discord import app_commands
