@@ -20,8 +20,6 @@ if TOKEN is None:
     exit(1)
 
 # Optional guild‐ID for dev (instant sync); unset in production
-_g = os.getenv("GUILD_ID")
-GUILD_ID = int(_g) if _g else None
 
 # Persist user → IANA timezone
 TZ_FILE = "timezones.json"
@@ -444,10 +442,7 @@ async def gamer_help(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed, ephemeral=True)
 # ─── Register & Sync ───────────────────────────────────────────────────────────
 
-if GUILD_ID:
-    bot.tree.add_command(gamer_group, guild=discord.Object(id=GUILD_ID))
-else:
-    bot.tree.add_command(gamer_group)
+bot.tree.add_command(gamer_group)
 
 @bot.event
 async def on_ready():
@@ -457,16 +452,20 @@ async def on_ready():
         return
     assert isinstance(user, (discord.User, discord.ClientUser))
     print(f"Logged in as {user} (ID: {user.id})")
-    if GUILD_ID:
-        synced = await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
-        print(f"[dev] Synced {len(synced)} commands")
-    else:
-        synced = await bot.tree.sync()
-        print(f"[prod] Synced {len(synced)} commands")
+    # global registration (will take up to 60 m to show everywhere)
+    synced = await bot.tree.sync()
+    print(f"[global] Synced {len(synced)} commands")
+    # Optionally: instantly push commands to all existing guilds
+    for g in bot.guilds:
+        bot.tree.add_command(gamer_group, guild=discord.Object(id=g.id))
+        await bot.tree.sync(guild=g)
+        print(f"→ Pushed to {g.name} ({g.id})")
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
-    # Instantly register/sync slash-commands in the guild we just joined
+    # 1) Add our /gamer-mimimi group into the tree for this new guild…
+    bot.tree.add_command(gamer_group, guild=discord.Object(id=guild.id))
+    # 2) …then sync so it shows up instantly (no 1 h wait)
     synced = await bot.tree.sync(guild=guild)
     print(f"✅ Registered {len(synced)} slash-commands in guild {guild.name} ({guild.id})")
 
