@@ -451,6 +451,9 @@ async def on_ready():
         return
     assert isinstance(user, (discord.User, discord.ClientUser))
     print(f"Logged in as {user} (ID: {user.id})")
+    # ── WIPE OUT ANY LEFTOVER GLOBAL COMMANDS ─────────────────────────
+    bot.tree.clear_commands(guild=None)   # clear the global list
+    await bot.tree.sync()                 # push “empty” list to Discord
     # Instant‐inject into every existing guild on startup
     for g in bot.guilds:
         bot.tree.add_command(gamer_group, guild=discord.Object(id=g.id))
